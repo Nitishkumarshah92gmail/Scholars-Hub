@@ -1,0 +1,91 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        ig: {
+          primary: '#0095F6',
+          'primary-hover': '#1877F2',
+          'primary-dark': '#0074CC',
+          separator: '#DBDBDB',
+          'separator-dark': '#363636',
+          bg: '#FFFFFF',
+          'bg-2': '#FAFAFA',
+          'bg-dark': '#000000',
+          'bg-dark-2': '#121212',
+          'bg-elevated': '#262626',
+          text: '#262626',
+          'text-2': '#8E8E8E',
+          'text-light': '#F5F5F5',
+          'text-light-2': '#A8A8A8',
+          error: '#ED4956',
+          success: '#58C322',
+          link: '#00376B',
+          'link-dark': '#E0F1FF',
+          badge: '#FF3040',
+        },
+        navy: {
+          50: '#e8edf5',
+          100: '#c5d0e6',
+          200: '#9eb2d4',
+          300: '#7794c2',
+          400: '#597db5',
+          500: '#3b66a8',
+          600: '#345e9f',
+          700: '#2b5395',
+          800: '#23498b',
+          900: '#1e3a5f',
+          950: '#0f1d30',
+        },
+        accent: {
+          50: '#fff9e6',
+          100: '#fef0bf',
+          200: '#fde795',
+          300: '#fcdd6b',
+          400: '#fbd54b',
+          500: '#fbbf24',
+          600: '#f5b020',
+          700: '#ef9c1a',
+          800: '#e98815',
+          900: '#df660b',
+        },
+      },
+      fontFamily: {
+        heading: ['"Space Grotesk"', 'sans-serif'],
+        body: ['"Inter"', 'sans-serif'],
+      },
+      backgroundImage: {
+        'ig-gradient': 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+        'ig-gradient-vivid': 'linear-gradient(45deg, #FCAF45, #F77737, #FD1D1D, #E1306C, #C13584, #833AB4, #5851DB, #405DE6)',
+        'ig-gradient-story': 'conic-gradient(from 180deg, #FCAF45, #F77737, #FD1D1D, #E1306C, #C13584, #833AB4, #405DE6, #FCAF45)',
+      },
+      boxShadow: {
+        'ig': '0 0 5px 1px rgba(0,0,0,0.0975)',
+        'ig-elevated': '0 0 24px rgba(0,0,0,0.15)',
+      },
+      animation: {
+        'like-pop': 'likePop 0.3s ease-in-out',
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'slide-up': 'slideUp 0.3s ease-out',
+      },
+      keyframes: {
+        likePop: {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.3)' },
+          '100%': { transform: 'scale(1)' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+    },
+  },
+  plugins: [],
+};
