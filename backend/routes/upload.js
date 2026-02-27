@@ -24,15 +24,16 @@ try {
     console.log('Google Drive: not configured, using local storage');
 }
 
-// Create local uploads folder (skip on read-only filesystems like Vercel)
-const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
+// Use /tmp on serverless (Vercel) or local uploads dir
+const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+const UPLOADS_DIR = IS_SERVERLESS ? path.join('/tmp', 'uploads') : path.join(__dirname, '..', 'uploads');
 try {
     ['posts', 'avatars', 'pdfs', 'images'].forEach(sub => {
         const dir = path.join(UPLOADS_DIR, sub);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     });
 } catch (e) {
-    console.warn('Could not create local upload directories (read-only filesystem):', e.message);
+    console.warn('Could not create local upload directories:', e.message);
 }
 
 // Configure multer
