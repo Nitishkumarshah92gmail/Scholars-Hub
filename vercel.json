@@ -1,5 +1,4 @@
 {
-    "framework": "vite",
     "installCommand": "cd frontend && npm install && cd ../backend && npm install",
     "buildCommand": "cd frontend && npm run build",
     "outputDirectory": "frontend/dist",
@@ -10,7 +9,7 @@
         },
         {
             "source": "/(.*)",
-            "destination": "/"
+            "destination": "/index.html"
         }
     ]
 }

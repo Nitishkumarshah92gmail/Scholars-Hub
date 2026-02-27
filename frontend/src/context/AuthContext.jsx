@@ -11,7 +11,8 @@ export function AuthProvider({ children }) {
   // Fetch profile from backend API
   const fetchProfile = async (accessToken) => {
     try {
-      const res = await fetch('/api/auth/me', {
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const res = await fetch(`${apiUrl}/auth/me`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
