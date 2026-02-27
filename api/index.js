@@ -28,8 +28,12 @@ if (userRoutes) app.use('/api/users', userRoutes);
 if (notificationRoutes) app.use('/api/notifications', notificationRoutes);
 if (uploadRoutes) app.use('/api/upload', uploadRoutes);
 
-// Serve local uploads as static files
-app.use('/uploads', express.static(path.join(__dirname, '..', 'backend', 'uploads')));
+// Serve uploaded files - use /tmp on Vercel, local dir otherwise
+const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+const uploadsPath = IS_SERVERLESS
+    ? path.join('/tmp', 'uploads')
+    : path.join(__dirname, '..', 'backend', 'uploads');
+app.use('/uploads', express.static(uploadsPath));
 
 // Health check
 app.get('/api/health', (req, res) => {
