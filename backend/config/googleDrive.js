@@ -78,6 +78,8 @@ async function getOrCreateFolder(drive, folderName = 'StudyShare Uploads') {
  * Get or create a subfolder inside the main StudyShare folder.
  */
 async function getOrCreateSubfolder(drive, parentFolderId, subfolderName) {
+    // Sanitize subfolder name to prevent query injection
+    subfolderName = subfolderName.replace(/[^a-zA-Z0-9_-]/g, '');
     const res = await drive.files.list({
         q: `name='${subfolderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
         fields: 'files(id, name)',

@@ -67,10 +67,11 @@ router.get('/search/find', auth, async (req, res) => {
     const { q } = req.query;
     if (!q) return res.json([]);
 
+    const sanitized = q.replace(/[%_,()]/g, '');
     const { data: users, error } = await supabase
       .from('profiles')
       .select('id, name, avatar, school, subjects')
-      .or(`name.ilike.%${q}%,school.ilike.%${q}%`)
+      .or(`name.ilike.%${sanitized}%,school.ilike.%${sanitized}%`)
       .limit(20);
 
     if (error && error.code === 'PGRST205') return res.json([]);

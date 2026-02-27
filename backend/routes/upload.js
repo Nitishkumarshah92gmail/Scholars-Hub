@@ -53,11 +53,13 @@ const upload = multer({
 /**
  * Save file locally and return URL
  */
-function saveFileLocally(buffer, originalName, subfolder) {
-    const ext = path.extname(originalName);
+async function saveFileLocally(buffer, originalName, subfolder) {
+    const ALLOWED_SUBFOLDERS = ['posts', 'avatars', 'pdfs', 'images'];
+    if (!ALLOWED_SUBFOLDERS.includes(subfolder)) subfolder = 'posts';
+    const ext = path.extname(originalName).replace(/[^a-zA-Z0-9.]/g, '');
     const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
     const filePath = path.join(UPLOADS_DIR, subfolder, uniqueName);
-    fs.writeFileSync(filePath, buffer);
+    await fs.promises.writeFile(filePath, buffer);
     const fileUrl = `/uploads/${subfolder}/${uniqueName}`;
     return {
         fileId: uniqueName,
@@ -77,7 +79,8 @@ router.post('/files', auth, upload.array('files', 5), async (req, res) => {
             return res.status(400).json({ error: 'No files provided.' });
         }
 
-        const subfolder = req.body.subfolder || 'posts';
+        const ALLOWED_SUBFOLDERS = ['posts', 'avatars', 'pdfs', 'images'];
+        const subfolder = ALLOWED_SUBFOLDERS.includes(req.body.subfolder) ? req.body.subfolder : 'posts';
         const results = [];
 
         for (const file of req.files) {
@@ -87,10 +90,10 @@ router.post('/files', auth, upload.array('files', 5), async (req, res) => {
                     results.push(result);
                 } catch (driveErr) {
                     console.log('Drive upload failed, falling back to local:', driveErr.message);
-                    results.push(saveFileLocally(file.buffer, file.originalname, subfolder));
+                    results.push(await saveFileLocally(file.buffer, file.originalname, subfolder));
                 }
             } else {
-                results.push(saveFileLocally(file.buffer, file.originalname, subfolder));
+                results.push(await saveFileLocally(file.buffer, file.originalname, subfolder));
             }
         }
 
@@ -116,10 +119,10 @@ router.post('/avatar', auth, upload.single('avatar'), async (req, res) => {
                 result = await uploadToDrive(req.file.buffer, req.file.originalname, req.file.mimetype, 'avatars');
             } catch (driveErr) {
                 console.log('Drive avatar upload failed, falling back to local:', driveErr.message);
-                result = saveFileLocally(req.file.buffer, req.file.originalname, 'avatars');
+                result = await saveFileLocally(req.file.buffer, req.file.originalname, 'avatars');
             }
         } else {
-            result = saveFileLocally(req.file.buffer, req.file.originalname, 'avatars');
+            result = await saveFileLocally(req.file.buffer, req.file.originalname, 'avatars');
         }
 
         res.json(result);
@@ -137,10 +140,12 @@ router.delete('/:fileId', auth, async (req, res) => {
         if (driveAvailable) {
             await deleteFromDrive(req.params.fileId);
         }
-        // Also try to delete locally
-        const fileId = req.params.fileId;
+        // Also try to delete locally — sanitize fileId to prevent path traversal
+        const fileId = path.basename(req.params.fileId);
         for (const sub of ['posts', 'avatars', 'pdfs', 'images']) {
             const localPath = path.join(UPLOADS_DIR, sub, fileId);
+            // Verify resolved path is still inside UPLOADS_DIR
+            if (!localPath.startsWith(UPLOADS_DIR)) continue;
             if (fs.existsSync(localPath)) {
                 fs.unlinkSync(localPath);
                 break;

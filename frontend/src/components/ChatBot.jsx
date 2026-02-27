@@ -12,6 +12,12 @@ export default function ChatBot() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const chatHistory = useRef([
+    {
+      role: 'system',
+      content: 'You are a helpful study assistant for a platform called Scholars Hub. Help students with academic questions, study tips, and platform usage. Keep responses concise and friendly.',
+    },
+  ]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -30,56 +36,45 @@ export default function ChatBot() {
     setInput('');
     setIsLoading(true);
 
+    // Add user message to history
+    chatHistory.current.push({ role: 'user', content: trimmed });
+
     try {
-      // Build conversation history for OpenRouter
-      const apiMessages = [
-        {
-          role: 'system',
-          content: 'You are a helpful study assistant for a platform called Scholars Hub. Help students with academic questions, study tips, and platform usage. Keep responses concise and friendly.',
-        },
-      ];
-
-      // Add previous messages (skip the initial greeting)
-      for (let i = 1; i < messages.length; i++) {
-        apiMessages.push({
-          role: messages[i].role === 'user' ? 'user' : 'assistant',
-          content: messages[i].text,
-        });
+      if (!OPENROUTER_API_KEY) {
+        throw new Error('OpenRouter API key not configured');
       }
-
-      // Add current user message
-      apiMessages.push({ role: 'user', content: trimmed });
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'HTTP-Referer': window.location.origin,
           'X-Title': 'Scholars Hub',
         },
         body: JSON.stringify({
           model: 'google/gemini-2.0-flash-001',
-          messages: apiMessages,
-          max_tokens: 1024,
-          temperature: 0.7,
+          messages: chatHistory.current,
         }),
       });
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `HTTP ${response.status}`);
+        throw new Error(errData?.error?.message || `API error: ${response.status}`);
       }
 
       const data = await response.json();
       const text = data.choices?.[0]?.message?.content || 'No response received.';
+
+      // Add bot response to history
+      chatHistory.current.push({ role: 'assistant', content: text });
 
       setMessages((prev) => [...prev, { role: 'bot', text }]);
     } catch (error) {
       console.error('ChatBot API error:', error);
       setMessages((prev) => [
         ...prev,
-        { role: 'bot', text: 'Sorry, I encountered an error. Please try again.' },
+        { role: 'bot', text: `Sorry, I encountered an error: ${error.message}. Please try again.` },
       ]);
     } finally {
       setIsLoading(false);
@@ -140,11 +135,10 @@ export default function ChatBot() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                    msg.role === 'user'
+                  className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user'
                       ? 'bg-ig-primary text-white rounded-br-md'
                       : 'bg-gray-100 dark:bg-ig-bg-elevated text-ig-text dark:text-ig-text-light rounded-bl-md'
-                  }`}
+                    }`}
                 >
                   {msg.text}
                 </div>

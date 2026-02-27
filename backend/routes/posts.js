@@ -168,7 +168,8 @@ router.get('/explore', auth, async (req, res) => {
       query = query.eq('type', type);
     }
     if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,subject.ilike.%${search}%`);
+      const sanitized = search.replace(/[%_,()]/g, '');
+      query = query.or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%,subject.ilike.%${sanitized}%`);
     }
 
     const { data: posts, count, error } = await query
