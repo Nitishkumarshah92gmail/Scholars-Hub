@@ -1,42 +1,15 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const auth = require('../middleware/auth');
+const supabase = require('../config/supabase');
 
 const router = express.Router();
 
-// Check if Google Drive is configured
-let driveAvailable = false;
-let uploadToDrive, deleteFromDrive;
-try {
-    const gd = require('../config/googleDrive');
-    uploadToDrive = gd.uploadFile;
-    deleteFromDrive = gd.deleteFile;
-    // Quick check: if service-account.json exists
-    if (fs.existsSync(path.join(__dirname, '..', 'service-account.json'))) {
-        driveAvailable = true;
-        console.log('Google Drive: configured ✓');
-    } else {
-        console.log('Google Drive: no service-account.json, using local storage');
-    }
-} catch (e) {
-    console.log('Google Drive: not configured, using local storage');
-}
+const SUPABASE_BUCKET = 'uploads';
+const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
 
-// Use /tmp on serverless (Vercel) or local uploads dir
-const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-const UPLOADS_DIR = IS_SERVERLESS ? path.join('/tmp', 'uploads') : path.join(__dirname, '..', 'uploads');
-try {
-    ['posts', 'avatars', 'pdfs', 'images'].forEach(sub => {
-        const dir = path.join(UPLOADS_DIR, sub);
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    });
-} catch (e) {
-    console.warn('Could not create local upload directories:', e.message);
-}
-
-// Configure multer
+// Configure multer (memory storage — files stay in buffer)
 const storage = multer.memoryStorage();
 const upload = multer({
     storage,
@@ -56,22 +29,40 @@ const upload = multer({
 });
 
 /**
- * Save file locally and return URL
+ * Upload file to Supabase Storage and return public URL
  */
-async function saveFileLocally(buffer, originalName, subfolder) {
+async function uploadToSupabase(buffer, originalName, mimetype, subfolder) {
     const ALLOWED_SUBFOLDERS = ['posts', 'avatars', 'pdfs', 'images'];
     if (!ALLOWED_SUBFOLDERS.includes(subfolder)) subfolder = 'posts';
+
     const ext = path.extname(originalName).replace(/[^a-zA-Z0-9.]/g, '');
     const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
-    const filePath = path.join(UPLOADS_DIR, subfolder, uniqueName);
-    await fs.promises.writeFile(filePath, buffer);
-    const fileUrl = `/uploads/${subfolder}/${uniqueName}`;
+    const filePath = `${subfolder}/${uniqueName}`;
+
+    const { data, error } = await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .upload(filePath, buffer, {
+            contentType: mimetype,
+            upsert: false,
+        });
+
+    if (error) {
+        throw new Error(`Supabase Storage upload failed: ${error.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+        .from(SUPABASE_BUCKET)
+        .getPublicUrl(filePath);
+
+    const publicUrl = urlData.publicUrl;
+
     return {
         fileId: uniqueName,
         fileName: originalName,
-        fileUrl,
-        viewLink: fileUrl,
-        downloadLink: fileUrl,
+        fileUrl: publicUrl,
+        viewLink: publicUrl,
+        downloadLink: publicUrl,
     };
 }
 
@@ -89,17 +80,8 @@ router.post('/files', auth, upload.array('files', 5), async (req, res) => {
         const results = [];
 
         for (const file of req.files) {
-            if (driveAvailable) {
-                try {
-                    const result = await uploadToDrive(file.buffer, file.originalname, file.mimetype, subfolder);
-                    results.push(result);
-                } catch (driveErr) {
-                    console.log('Drive upload failed, falling back to local:', driveErr.message);
-                    results.push(await saveFileLocally(file.buffer, file.originalname, subfolder));
-                }
-            } else {
-                results.push(await saveFileLocally(file.buffer, file.originalname, subfolder));
-            }
+            const result = await uploadToSupabase(file.buffer, file.originalname, file.mimetype, subfolder);
+            results.push(result);
         }
 
         res.json({ urls: results });
@@ -118,18 +100,7 @@ router.post('/avatar', auth, upload.single('avatar'), async (req, res) => {
             return res.status(400).json({ error: 'No avatar file provided.' });
         }
 
-        let result;
-        if (driveAvailable) {
-            try {
-                result = await uploadToDrive(req.file.buffer, req.file.originalname, req.file.mimetype, 'avatars');
-            } catch (driveErr) {
-                console.log('Drive avatar upload failed, falling back to local:', driveErr.message);
-                result = await saveFileLocally(req.file.buffer, req.file.originalname, 'avatars');
-            }
-        } else {
-            result = await saveFileLocally(req.file.buffer, req.file.originalname, 'avatars');
-        }
-
+        const result = await uploadToSupabase(req.file.buffer, req.file.originalname, req.file.mimetype, 'avatars');
         res.json(result);
     } catch (err) {
         console.error('Avatar upload error:', err);
@@ -142,19 +113,13 @@ router.post('/avatar', auth, upload.single('avatar'), async (req, res) => {
  */
 router.delete('/:fileId', auth, async (req, res) => {
     try {
-        if (driveAvailable) {
-            await deleteFromDrive(req.params.fileId);
-        }
-        // Also try to delete locally — sanitize fileId to prevent path traversal
         const fileId = path.basename(req.params.fileId);
+        // Try deleting from each subfolder in Supabase Storage
         for (const sub of ['posts', 'avatars', 'pdfs', 'images']) {
-            const localPath = path.join(UPLOADS_DIR, sub, fileId);
-            // Verify resolved path is still inside UPLOADS_DIR
-            if (!localPath.startsWith(UPLOADS_DIR)) continue;
-            if (fs.existsSync(localPath)) {
-                fs.unlinkSync(localPath);
-                break;
-            }
+            const { error } = await supabase.storage
+                .from(SUPABASE_BUCKET)
+                .remove([`${sub}/${fileId}`]);
+            if (!error) break;
         }
         res.json({ message: 'File deleted successfully.' });
     } catch (err) {
