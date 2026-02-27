@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { useTheme } from '../context/ThemeContext';
 import { HiX, HiPaperAirplane } from 'react-icons/hi';
 
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
 export default function ChatBot() {
-  const { darkMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'bot', text: 'Hi! I\'m your Scholars Hub AI assistant. Ask me anything about studying, academics, or how to use the platform!' },

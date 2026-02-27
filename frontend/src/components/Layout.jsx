@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useState, useEffect } from 'react';
 import { getNotifications } from '../api';
 import ChatBot from './ChatBot';
+import logoImg from '../assets/logo.png';
 import {
   HiHome,
   HiOutlineHome,
@@ -74,7 +75,7 @@ export default function Layout() {
             className="text-2xl font-heading font-bold text-ig-text dark:text-ig-text-light flex items-center gap-2 cursor-pointer"
             onClick={() => navigate('/dashboard')}
           >
-            <img src="/src/assets/logo.png" alt="Scholars Hub" className="w-9 h-9 rounded-full object-cover" />
+            <img src={logoImg} alt="Scholars Hub" className="w-9 h-9 rounded-full object-cover" />
             <span>
               Scholars<span className="gradient-text"> Hub</span>
             </span>

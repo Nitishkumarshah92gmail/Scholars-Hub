@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import logoImg from '../assets/logo.png';
 import { HiEye, HiEyeOff } from 'react-icons/hi';
 
 export default function Login() {
@@ -44,7 +45,7 @@ export default function Login() {
           {/* Logo */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-heading font-bold text-ig-text dark:text-ig-text-light flex items-center justify-center gap-2">
-              <img src="/src/assets/logo.png" alt="Scholars Hub" className="w-10 h-10 rounded-full object-cover" />
+              <img src={logoImg} alt="Scholars Hub" className="w-10 h-10 rounded-full object-cover" />
               Scholars<span className="gradient-text"> Hub</span>
             </h1>
           </div>
