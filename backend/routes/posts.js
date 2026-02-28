@@ -4,6 +4,63 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+const YOUTUBE_API_KEY = (process.env.YOUTUBE_API_KEY || '').trim();
+
+// Helper: fetch YouTube video info via Data API v3
+async function fetchYoutubeVideoInfo(videoId) {
+  if (!YOUTUBE_API_KEY || !videoId) return null;
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=status,snippet&id=${videoId}&key=${YOUTUBE_API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.items && data.items.length > 0) {
+      const item = data.items[0];
+      return {
+        title: item.snippet?.title || '',
+        embeddable: item.status?.embeddable !== false,
+        privacyStatus: item.status?.privacyStatus || 'unknown',
+        thumbnail: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.default?.url || '',
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error('YouTube video API error:', err.message);
+    return null;
+  }
+}
+
+// Helper: fetch YouTube playlist info & first video via Data API v3
+async function fetchYoutubePlaylistInfo(playlistId) {
+  if (!YOUTUBE_API_KEY || !playlistId) return null;
+  try {
+    // Get playlist details
+    const plUrl = `https://www.googleapis.com/youtube/v3/playlists?part=snippet,status&id=${playlistId}&key=${YOUTUBE_API_KEY}`;
+    const plRes = await fetch(plUrl);
+    const plData = await plRes.json();
+
+    if (!plData.items || plData.items.length === 0) return null;
+
+    const playlist = plData.items[0];
+
+    // Get first video in playlist
+    const itemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=1&key=${YOUTUBE_API_KEY}`;
+    const itemsRes = await fetch(itemsUrl);
+    const itemsData = await itemsRes.json();
+
+    const firstVideoId = itemsData.items?.[0]?.snippet?.resourceId?.videoId || '';
+
+    return {
+      title: playlist.snippet?.title || '',
+      privacyStatus: playlist.status?.privacyStatus || 'unknown',
+      firstVideoId,
+      thumbnail: playlist.snippet?.thumbnails?.high?.url || playlist.snippet?.thumbnails?.default?.url || '',
+    };
+  } catch (err) {
+    console.error('YouTube playlist API error:', err.message);
+    return null;
+  }
+}
+
 // Helpers: extract YouTube ID from URL
 function extractYoutubeId(url) {
   // Extract video ID
@@ -229,6 +286,34 @@ router.post('/', auth, async (req, res) => {
       postData.playlist_id = extracted.playlistId || '';
       postData.file_url = youtubeUrl;
       postData.type = extracted.type;
+
+      // Use YouTube Data API to validate and enrich
+      if (YOUTUBE_API_KEY) {
+        if (extracted.type === 'youtube_playlist' && extracted.playlistId) {
+          const plInfo = await fetchYoutubePlaylistInfo(extracted.playlistId);
+          if (plInfo) {
+            // If playlist has a first video, store it so embed works reliably
+            if (plInfo.firstVideoId && !postData.youtube_id) {
+              postData.youtube_id = plInfo.firstVideoId;
+            }
+            if (plInfo.privacyStatus === 'private') {
+              return res.status(400).json({ error: 'This playlist is private. Please make it Public or Unlisted on YouTube to embed it.' });
+            }
+          } else {
+            return res.status(400).json({ error: 'Could not access this playlist. Make sure it is Public or Unlisted.' });
+          }
+        } else if (extracted.type === 'youtube_video' && extracted.id) {
+          const vidInfo = await fetchYoutubeVideoInfo(extracted.id);
+          if (vidInfo) {
+            if (!vidInfo.embeddable) {
+              return res.status(400).json({ error: 'This video does not allow embedding. Please choose a different video.' });
+            }
+            if (vidInfo.privacyStatus === 'private') {
+              return res.status(400).json({ error: 'This video is private. Please make it Public or Unlisted on YouTube.' });
+            }
+          }
+        }
+      }
     } else {
       postData.file_url = fileUrl || '';
       postData.file_urls = fileUrls || [];
@@ -390,7 +475,37 @@ router.post('/:id/comment', auth, async (req, res) => {
     res.status(500).json({ error: 'Failed to add comment.' });
   }
 });
+// GET /api/posts/youtube/validate?url=... — validate YouTube URL using Data API
+router.get('/youtube/validate', auth, async (req, res) => {
+  try {
+    const url = req.query.url;
+    if (!url) return res.status(400).json({ error: 'URL is required.' });
+    if (!YOUTUBE_API_KEY) return res.json({ valid: true, message: 'No YouTube API key configured, skipping validation.' });
 
+    const extracted = extractYoutubeId(url);
+    if (!extracted) return res.status(400).json({ error: 'Invalid YouTube URL format.' });
+
+    if (extracted.type === 'youtube_video' && extracted.id) {
+      const info = await fetchYoutubeVideoInfo(extracted.id);
+      if (!info) return res.json({ valid: false, error: 'Video not found or is private.' });
+      if (info.privacyStatus === 'private') return res.json({ valid: false, error: 'This video is private.' });
+      if (!info.embeddable) return res.json({ valid: false, error: 'This video does not allow embedding.' });
+      return res.json({ valid: true, title: info.title, thumbnail: info.thumbnail, type: 'youtube_video', videoId: extracted.id });
+    }
+
+    if (extracted.playlistId) {
+      const info = await fetchYoutubePlaylistInfo(extracted.playlistId);
+      if (!info) return res.json({ valid: false, error: 'Playlist not found or is private.' });
+      if (info.privacyStatus === 'private') return res.json({ valid: false, error: 'This playlist is private. Make it Public or Unlisted.' });
+      return res.json({ valid: true, title: info.title, thumbnail: info.thumbnail, type: 'youtube_playlist', playlistId: extracted.playlistId, firstVideoId: info.firstVideoId });
+    }
+
+    res.json({ valid: false, error: 'Could not extract video or playlist ID.' });
+  } catch (error) {
+    console.error('YouTube validate error:', error);
+    res.status(500).json({ error: 'Validation failed.' });
+  }
+});
 // POST /api/posts/:id/report — report a post
 router.post('/:id/report', auth, async (req, res) => {
   try {

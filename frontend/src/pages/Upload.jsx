@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createPost, uploadFiles } from '../api';
+import { createPost, uploadFiles, validateYoutubeUrl } from '../api';
 import { SUBJECTS } from '../utils';
 import toast from 'react-hot-toast';
 import {
@@ -33,6 +33,33 @@ export default function Upload() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
+  const [ytValidation, setYtValidation] = useState(null); // { valid, error, title, thumbnail }
+  const [ytValidating, setYtValidating] = useState(false);
+
+  // Debounced YouTube URL validation
+  useEffect(() => {
+    if ((type !== 'youtube_video' && type !== 'youtube_playlist') || !youtubeUrl.trim()) {
+      setYtValidation(null);
+      return;
+    }
+    // Basic URL check before calling API
+    if (!youtubeUrl.match(/youtube\.com|youtu\.be/i)) {
+      setYtValidation(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setYtValidating(true);
+      try {
+        const res = await validateYoutubeUrl(youtubeUrl.trim());
+        setYtValidation(res.data);
+      } catch (err) {
+        setYtValidation({ valid: false, error: err.response?.data?.error || 'Could not validate URL' });
+      } finally {
+        setYtValidating(false);
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [youtubeUrl, type]);
 
   const handleFileChange = (e) => {
     const selected = Array.from(e.target.files);
@@ -192,6 +219,33 @@ export default function Upload() {
                   placeholder="https://youtube.com/watch?v=..."
                 />
               </div>
+              {/* Validation status */}
+              {ytValidating && (
+                <p className="text-xs text-ig-text-2 mt-2 flex items-center gap-1">
+                  <span className="w-3 h-3 border-2 border-ig-primary border-t-transparent rounded-full animate-spin inline-block" />
+                  Checking YouTube URL...
+                </p>
+              )}
+              {ytValidation && !ytValidating && (
+                ytValidation.valid ? (
+                  <div className="mt-3 rounded-lg border border-green-500/30 bg-green-500/5 p-3">
+                    <div className="flex items-center gap-3">
+                      {ytValidation.thumbnail && (
+                        <img src={ytValidation.thumbnail} alt="" className="w-24 h-14 object-cover rounded" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-green-500">✓ Valid &amp; embeddable</p>
+                        {ytValidation.title && <p className="text-xs text-ig-text dark:text-ig-text-light truncate mt-0.5">{ytValidation.title}</p>}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/5 p-2.5">
+                    <p className="text-xs text-red-500 font-medium">⚠ {ytValidation.error}</p>
+                    <p className="text-[11px] text-ig-text-2 mt-1">Make sure the video/playlist is set to Public or Unlisted on YouTube.</p>
+                  </div>
+                )
+              )}
             </div>
           ) : (
             <div>

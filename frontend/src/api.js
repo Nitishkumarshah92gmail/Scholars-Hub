@@ -36,6 +36,7 @@ export const likePost = (id) => API.post(`/posts/${id}/like`);
 export const commentPost = (id, text) => API.post(`/posts/${id}/comment`, { text });
 export const reportPost = (id, reason) => API.post(`/posts/${id}/report`, { reason });
 export const deletePost = (id) => API.delete(`/posts/${id}`);
+export const validateYoutubeUrl = (url) => API.get('/posts/youtube/validate', { params: { url } });
 
 // Users
 export const getUser = (id) => API.get(`/users/${id}`);
