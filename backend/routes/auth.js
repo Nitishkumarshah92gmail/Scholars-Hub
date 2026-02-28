@@ -111,3 +111,42 @@ router.get('/me', auth, async (req, res) => {
 });
 
 module.exports = router;
+
+// POST /api/auth/forgot-password — generate a password reset link
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email, redirectTo } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+
+    // Use admin API (service role) to generate the recovery link
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: email.trim(),
+      options: {
+        redirectTo: redirectTo || undefined,
+      },
+    });
+
+    if (error) {
+      console.error('Generate recovery link error:', error);
+      // Common errors
+      if (error.message?.includes('User not found') || error.message?.includes('not found')) {
+        return res.status(404).json({ error: 'No account found with this email address.' });
+      }
+      return res.status(400).json({ error: error.message || 'Failed to generate reset link.' });
+    }
+
+    // Return the action link to the frontend
+    const actionLink = data?.properties?.action_link;
+    if (!actionLink) {
+      return res.status(500).json({ error: 'Failed to generate reset link. Please try again.' });
+    }
+
+    res.json({ success: true, actionLink });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Server error. Please try again later.' });
+  }
+});
+
+module.exports = router;

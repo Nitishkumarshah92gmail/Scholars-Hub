@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import logoImg from '../assets/logo.png';
 import { HiLockClosed, HiMail, HiArrowLeft } from 'react-icons/hi';
@@ -8,6 +7,7 @@ import { HiLockClosed, HiMail, HiArrowLeft } from 'react-icons/hi';
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLink, setResetLink] = useState('');
   const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -15,21 +15,24 @@ export default function ForgotPassword() {
     if (!email.trim()) return toast.error('Please enter your email address.');
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const res = await fetch(`${apiUrl}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim(),
+          redirectTo: `${window.location.origin}/reset-password`,
+        }),
       });
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate reset link.');
+
+      setResetLink(data.actionLink);
       setSent(true);
-      toast.success('Password reset link sent! Check your email.');
+      toast.success('Reset link generated! Click the button below.');
     } catch (err) {
       console.error('Password reset error:', err);
-      if (err.message?.includes('rate limit')) {
-        toast.error('Too many requests. Please wait a few minutes.');
-      } else if (err.message?.includes('Email not found') || err.message?.includes('User not found')) {
-        toast.error('No account found with this email address.');
-      } else {
-        toast.error(err.message || 'Failed to send reset link. Please try again.');
-      }
+      toast.error(err.message || 'Failed to send reset link. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -85,16 +88,22 @@ export default function ForgotPassword() {
                 <HiMail className="w-8 h-8 text-green-500" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-ig-text dark:text-ig-text-light">Email sent!</p>
+                <p className="text-sm font-semibold text-ig-text dark:text-ig-text-light">Ready to reset!</p>
                 <p className="text-xs text-ig-text-2 mt-1 leading-relaxed">
-                  Check your inbox for <span className="font-semibold">{email}</span> and click the reset link.
+                  Click the button below to set a new password for <span className="font-semibold">{email}</span>.
                 </p>
               </div>
+              <a
+                href={resetLink}
+                className="btn-primary w-full text-sm inline-block text-center"
+              >
+                Reset My Password
+              </a>
               <button
-                onClick={() => { setSent(false); setEmail(''); }}
+                onClick={() => { setSent(false); setEmail(''); setResetLink(''); }}
                 className="text-ig-primary text-xs font-semibold hover:text-ig-primary-hover"
               >
-                Didn't receive it? Try again
+                Use a different email
               </button>
             </div>
           )}
