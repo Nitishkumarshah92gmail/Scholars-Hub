@@ -42,6 +42,7 @@ export const validateYoutubeUrl = (url) => API.get('/posts/youtube/validate', { 
 export const getUser = (id) => API.get(`/users/${id}`);
 export const updateUser = (id, data) => API.put(`/users/${id}`, data);
 export const followUser = (id) => API.post(`/users/${id}/follow`);
+export const getTotalUsers = () => API.get('/users/stats/count');
 export const bookmarkPost = (postId) => API.post(`/users/bookmark/${postId}`);
 export const getBookmarks = (id) => API.get(`/users/${id}/bookmarks`);
 export const searchUsers = (q) => API.get(`/users/search/find?q=${q}`);

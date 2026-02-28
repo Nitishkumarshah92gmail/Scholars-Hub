@@ -69,7 +69,7 @@ export default function Feed() {
               No posts yet
             </h3>
             <p className="text-sm text-ig-text-2">
-              Follow some students or explore to see posts in your feed!
+              Start sharing or explore to see posts in your feed!
             </p>
           </div>
         ) : (

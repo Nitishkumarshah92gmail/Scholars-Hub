@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getUser, followUser, updateUser, uploadAvatar } from '../api';
+import { getUser, updateUser, uploadAvatar, getTotalUsers } from '../api';
 import PostCard from '../components/PostCard';
 import PostSkeleton from '../components/PostSkeleton';
 import { SUBJECTS, getSubjectColor } from '../utils';
 import toast from 'react-hot-toast';
-import { HiPencil, HiX, HiCamera } from 'react-icons/hi';
+import { HiPencil, HiX, HiCamera, HiUserGroup } from 'react-icons/hi';
 
 export default function Profile() {
   const { id } = useParams();
@@ -15,8 +15,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followersCount, setFollowersCount] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -25,12 +24,14 @@ export default function Profile() {
 
   useEffect(() => {
     setLoading(true);
-    getUser(id)
-      .then((res) => {
+    Promise.all([
+      getUser(id),
+      getTotalUsers().catch(() => ({ data: { totalUsers: 0 } })),
+    ])
+      .then(([res, statsRes]) => {
         setProfile(res.data.user);
         setPosts(res.data.posts);
-        setIsFollowing(res.data.user.followers?.some((f) => f._id === currentUser?._id));
-        setFollowersCount(res.data.user.followers?.length || 0);
+        setTotalUsers(statsRes.data.totalUsers || 0);
         setEditForm({
           name: res.data.user.name,
           bio: res.data.user.bio || '',
@@ -41,16 +42,6 @@ export default function Profile() {
       .catch(() => toast.error('Failed to load profile.'))
       .finally(() => setLoading(false));
   }, [id, currentUser?._id]);
-
-  const handleFollow = async () => {
-    try {
-      const res = await followUser(id);
-      setIsFollowing(res.data.isFollowing);
-      setFollowersCount(res.data.followersCount);
-    } catch {
-      toast.error('Failed to follow/unfollow.');
-    }
-  };
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
@@ -145,23 +136,21 @@ export default function Profile() {
             <h1 className="text-xl font-normal text-ig-text dark:text-ig-text-light">
               {profile.name}
             </h1>
-            {isOwnProfile ? (
+            {isOwnProfile && (
               <button onClick={() => setEditing(!editing)} className="btn-outline text-sm flex items-center gap-1.5 py-1.5 px-4">
                 {editing ? <HiX className="w-4 h-4" /> : <HiPencil className="w-4 h-4" />}
                 {editing ? 'Cancel' : 'Edit profile'}
               </button>
-            ) : (
-              <button onClick={handleFollow} className={isFollowing ? 'btn-outline text-sm py-1.5 px-6' : 'btn-primary text-sm py-1.5 px-6'}>
-                {isFollowing ? 'Following' : 'Follow'}
-              </button>
             )}
           </div>
 
-          {/* Stats — Instagram-style */}
+          {/* Stats */}
           <div className="flex gap-8 mb-4">
             <div><span className="font-semibold text-ig-text dark:text-ig-text-light">{posts.length}</span> <span className="text-ig-text-2 text-sm">posts</span></div>
-            <div><span className="font-semibold text-ig-text dark:text-ig-text-light">{followersCount}</span> <span className="text-ig-text-2 text-sm">followers</span></div>
-            <div><span className="font-semibold text-ig-text dark:text-ig-text-light">{profile.following?.length || 0}</span> <span className="text-ig-text-2 text-sm">following</span></div>
+            <div className="flex items-center gap-1.5">
+              <HiUserGroup className="w-4 h-4 text-ig-primary" />
+              <span className="font-semibold text-ig-text dark:text-ig-text-light">{totalUsers}</span> <span className="text-ig-text-2 text-sm">scholars on platform</span>
+            </div>
           </div>
 
           {/* Bio */}

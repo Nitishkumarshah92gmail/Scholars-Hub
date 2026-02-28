@@ -2,7 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useState, useEffect } from 'react';
-import { getNotifications } from '../api';
+import { getNotifications, getTotalUsers } from '../api';
 import ChatBot from './ChatBot';
 import logoImg from '../assets/logo.png';
 import {
@@ -26,6 +26,7 @@ import {
   HiOutlineAcademicCap,
   HiDotsHorizontal,
   HiX,
+  HiUserGroup,
 } from 'react-icons/hi';
 
 export default function Layout() {
@@ -34,14 +35,21 @@ export default function Layout() {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   useEffect(() => {
     getNotifications()
       .then((res) => setUnreadCount(res.data.unreadCount))
       .catch(() => { });
+    getTotalUsers()
+      .then((res) => setTotalUsers(res.data.totalUsers || 0))
+      .catch(() => { });
     const interval = setInterval(() => {
       getNotifications()
         .then((res) => setUnreadCount(res.data.unreadCount))
+        .catch(() => { });
+      getTotalUsers()
+        .then((res) => setTotalUsers(res.data.totalUsers || 0))
         .catch(() => { });
     }, 30000);
     return () => clearInterval(interval);
@@ -170,6 +178,11 @@ export default function Layout() {
 
         {/* Contact */}
         <div className="px-6 pb-2 hidden xl:block">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <HiUserGroup className="w-3.5 h-3.5 text-ig-primary" />
+            <span className="text-[11px] font-semibold text-ig-text dark:text-ig-text-light">{totalUsers}</span>
+            <span className="text-[10px] text-ig-text-2">scholars using this platform</span>
+          </div>
           <p className="text-[10px] text-ig-text-2 leading-relaxed">
             By <span className="font-semibold">Nitish Kumar Sahu</span> · <a href="mailto:nitishkumarshah92@gmail.com" className="text-ig-primary hover:underline">Report an issue</a>
           </p>

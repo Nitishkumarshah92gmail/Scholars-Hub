@@ -62,6 +62,25 @@ function transformPost(post) {
 }
 
 // GET /api/users/search/find?q=query — search users (must be before /:id)
+
+// GET /api/users/stats/count — get total registered users count
+router.get('/stats/count', auth, async (req, res) => {
+  try {
+    const { count, error } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+
+    if (error && error.code === 'PGRST205') {
+      return res.json({ totalUsers: 0 });
+    }
+
+    res.json({ totalUsers: count || 0 });
+  } catch (error) {
+    console.error('User count error:', error);
+    res.json({ totalUsers: 0 });
+  }
+});
+
 router.get('/search/find', auth, async (req, res) => {
   try {
     const { q } = req.query;
