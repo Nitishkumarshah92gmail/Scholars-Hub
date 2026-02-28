@@ -63,6 +63,31 @@ function transformPost(post) {
 
 // GET /api/users/search/find?q=query — search users (must be before /:id)
 
+// GET /api/users/scholars — get recent scholars on the platform
+router.get('/scholars', auth, async (req, res) => {
+  try {
+    const { data: users, error } = await supabase
+      .from('profiles')
+      .select('id, name, avatar, school')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error && error.code === 'PGRST205') return res.json([]);
+
+    res.json(
+      (users || []).map((u) => ({
+        _id: u.id,
+        name: u.name,
+        avatar: u.avatar,
+        school: u.school,
+      }))
+    );
+  } catch (error) {
+    console.error('Scholars error:', error);
+    res.json([]);
+  }
+});
+
 // GET /api/users/stats/count — get total registered users count
 router.get('/stats/count', auth, async (req, res) => {
   try {

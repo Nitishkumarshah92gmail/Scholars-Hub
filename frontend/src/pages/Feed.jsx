@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getFeed } from '../api';
 import PostCard from '../components/PostCard';
 import PostSkeleton from '../components/PostSkeleton';
+import ScholarsBar from '../components/ScholarsBar';
 import { useAuth } from '../context/AuthContext';
 
 export default function Feed() {
@@ -53,6 +54,8 @@ export default function Feed() {
 
   return (
     <div>
+      {/* Scholars on Platform */}
+      <ScholarsBar />
 
       {/* Posts */}
       <div className="space-y-4">
