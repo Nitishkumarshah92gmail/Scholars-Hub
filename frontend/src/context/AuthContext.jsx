@@ -41,7 +41,11 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, s) => {
         setSession(s);
-        if (event === 'SIGNED_IN' && s?.access_token) {
+        if (event === 'PASSWORD_RECOVERY') {
+          // User clicked the password reset link — don't fetch profile,
+          // let the ResetPassword page handle it
+          return;
+        } else if (event === 'SIGNED_IN' && s?.access_token) {
           // Small delay to ensure the profile trigger has completed
           await new Promise((r) => setTimeout(r, 500));
           await fetchProfile(s.access_token);

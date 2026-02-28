@@ -16,19 +16,19 @@ export default function ForgotPassword() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
       setSent(true);
       toast.success('Password reset link sent! Check your email.');
     } catch (err) {
-      // Don't reveal whether email exists for security
+      console.error('Password reset error:', err);
       if (err.message?.includes('rate limit')) {
         toast.error('Too many requests. Please wait a few minutes.');
+      } else if (err.message?.includes('Email not found') || err.message?.includes('User not found')) {
+        toast.error('No account found with this email address.');
       } else {
-        // Still show success to prevent email enumeration
-        setSent(true);
-        toast.success('If this email is registered, you will receive a reset link.');
+        toast.error(err.message || 'Failed to send reset link. Please try again.');
       }
     } finally {
       setLoading(false);
