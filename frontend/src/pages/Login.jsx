@@ -97,7 +97,11 @@ export default function Login() {
             <div className="flex-1 h-px bg-ig-separator dark:bg-ig-separator-dark" />
           </div>
 
-          <p className="text-center text-xs text-ig-text-2">
+          <Link to="/forgot-password" className="block text-center text-xs text-ig-primary font-semibold hover:text-ig-primary-hover">
+            Forgot password?
+          </Link>
+
+          <p className="text-center text-xs text-ig-text-2 mt-3">
             Welcome to Scholars Hub — learn together, grow together.
           </p>
         </div>
