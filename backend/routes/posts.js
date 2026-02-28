@@ -227,6 +227,7 @@ router.post('/', auth, async (req, res) => {
       }
       postData.youtube_id = extracted.id || '';
       postData.playlist_id = extracted.playlistId || '';
+      postData.file_url = youtubeUrl;
       postData.type = extracted.type;
     } else {
       postData.file_url = fileUrl || '';

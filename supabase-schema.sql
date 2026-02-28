@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS posts (
   file_url TEXT DEFAULT '',
   file_urls TEXT[] DEFAULT '{}',
   youtube_id TEXT DEFAULT '',
+  playlist_id TEXT DEFAULT '',
   title TEXT NOT NULL,
   description TEXT DEFAULT '',
   subject TEXT NOT NULL,

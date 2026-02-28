@@ -145,16 +145,19 @@ export default function PostCard({ post, onUpdate }) {
           if (m) videoId = m[1];
         }
         if (!videoId) return <div className="p-6 text-center text-ig-text-2">Invalid YouTube URL</div>;
+        const ytKey = import.meta.env.VITE_YOUTUBE_API_KEY;
+        const ytParams = `rel=0&enablejsapi=1${ytKey ? `&key=${ytKey}` : ''}`;
         return (
           <div className="aspect-video">
             <iframe
-              src={`https://www.youtube.com/embed/${videoId}?rel=0`}
+              src={`https://www.youtube.com/embed/${videoId}?${ytParams}`}
               title={post.title}
               className="w-full h-full"
               frameBorder="0"
               allowFullScreen
               loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
             />
           </div>
         );
@@ -162,6 +165,8 @@ export default function PostCard({ post, onUpdate }) {
       case 'youtube_playlist': {
         const plId = post.playlistId || '';
         let vidId = post.youtubeId || '';
+        const ytKey = import.meta.env.VITE_YOUTUBE_API_KEY;
+        const ytExtra = `&rel=0&enablejsapi=1${ytKey ? `&key=${ytKey}` : ''}`;
         // Fallback: extract from fileUrl
         if (!vidId && !plId && post.fileUrl) {
           const vm = post.fileUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -170,18 +175,18 @@ export default function PostCard({ post, onUpdate }) {
           if (pm) {
             const extractedPlId = pm[1];
             const embedSrc = vidId
-              ? `https://www.youtube.com/embed/${vidId}?list=${extractedPlId}&rel=0`
-              : `https://www.youtube.com/embed/videoseries?list=${extractedPlId}&rel=0`;
+              ? `https://www.youtube.com/embed/${vidId}?list=${extractedPlId}${ytExtra}`
+              : `https://www.youtube.com/embed/videoseries?list=${extractedPlId}${ytExtra}`;
             return (
               <div className="aspect-video">
-                <iframe src={embedSrc} title={post.title} className="w-full h-full" frameBorder="0" allowFullScreen loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
+                <iframe src={embedSrc} title={post.title} className="w-full h-full" frameBorder="0" allowFullScreen loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" />
               </div>
             );
           }
         }
         const embedSrc = vidId
-          ? `https://www.youtube.com/embed/${vidId}?list=${plId}&rel=0`
-          : `https://www.youtube.com/embed/videoseries?list=${plId}&rel=0`;
+          ? `https://www.youtube.com/embed/${vidId}?list=${plId}${ytExtra}`
+          : `https://www.youtube.com/embed/videoseries?list=${plId}${ytExtra}`;
         return (
           <div className="aspect-video">
             <iframe
@@ -192,6 +197,7 @@ export default function PostCard({ post, onUpdate }) {
               allowFullScreen
               loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
             />
           </div>
         );
