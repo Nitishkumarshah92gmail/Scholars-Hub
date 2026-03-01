@@ -163,18 +163,36 @@ export default function PostDetail() {
         if (!videoId) return <div className="p-6 text-center text-ig-text-2">Invalid YouTube URL</div>;
         return (
           <div className="aspect-video">
-            <iframe src={`https://www.youtube.com/embed/${videoId}?rel=0`} title={post.title} className="w-full h-full" frameBorder="0" allowFullScreen loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
+              title={post.title}
+              className="w-full h-full"
+              frameBorder="0"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            />
           </div>
         );
       }
       case 'youtube_playlist': {
         const plId = post.playlistId || post.youtubeId;
         const embedSrc = post.youtubeId
-          ? `https://www.youtube.com/embed/${post.youtubeId}?list=${plId}&rel=0`
-          : `https://www.youtube.com/embed/videoseries?list=${plId}&rel=0`;
+          ? `https://www.youtube-nocookie.com/embed/${post.youtubeId}?list=${plId}&rel=0`
+          : `https://www.youtube-nocookie.com/embed/videoseries?list=${plId}&rel=0`;
         return (
           <div className="aspect-video">
-            <iframe src={embedSrc} title={post.title} className="w-full h-full" frameBorder="0" allowFullScreen loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
+            <iframe
+              src={embedSrc}
+              title={post.title}
+              className="w-full h-full"
+              frameBorder="0"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            />
           </div>
         );
       }
