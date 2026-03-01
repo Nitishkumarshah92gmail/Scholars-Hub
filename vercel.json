@@ -8,11 +8,11 @@
             "headers": [
                 {
                     "key": "Permissions-Policy",
-                    "value": "accelerometer=*, autoplay=*, clipboard-write=*, encrypted-media=*, gyroscope=*, picture-in-picture=*, web-share=*"
+                    "value": "accelerometer=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), autoplay=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), clipboard-write=(self), encrypted-media=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), gyroscope=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), picture-in-picture=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), web-share=(self)"
                 },
                 {
                     "key": "Referrer-Policy",
-                    "value": "strict-origin-when-cross-origin"
+                    "value": "no-referrer-when-downgrade"
                 }
             ]
         }

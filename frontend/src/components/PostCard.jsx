@@ -148,12 +148,11 @@ export default function PostCard({ post, onUpdate }) {
         return (
           <div className="aspect-video">
             <iframe
-              src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0`}
+              src={`https://www.youtube.com/embed/${videoId}?rel=0&origin=${encodeURIComponent(window.location.origin)}`}
               title={post.title}
               className="w-full h-full"
               frameBorder="0"
               allowFullScreen
-              loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             />
@@ -171,18 +170,18 @@ export default function PostCard({ post, onUpdate }) {
           if (pm) {
             const extractedPlId = pm[1];
             const embedSrc = vidId
-              ? `https://www.youtube-nocookie.com/embed/${vidId}?list=${extractedPlId}&rel=0`
-              : `https://www.youtube-nocookie.com/embed/videoseries?list=${extractedPlId}&rel=0`;
+              ? `https://www.youtube.com/embed/${vidId}?list=${extractedPlId}&rel=0&origin=${encodeURIComponent(window.location.origin)}`
+              : `https://www.youtube.com/embed/videoseries?list=${extractedPlId}&rel=0&origin=${encodeURIComponent(window.location.origin)}`;
             return (
               <div className="aspect-video">
-                <iframe src={embedSrc} title={post.title} className="w-full h-full" frameBorder="0" allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
+                <iframe src={embedSrc} title={post.title} className="w-full h-full" frameBorder="0" allowFullScreen referrerPolicy="no-referrer-when-downgrade" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" />
               </div>
             );
           }
         }
         const embedSrc = vidId
-          ? `https://www.youtube-nocookie.com/embed/${vidId}?list=${plId}&rel=0`
-          : `https://www.youtube-nocookie.com/embed/videoseries?list=${plId}&rel=0`;
+          ? `https://www.youtube.com/embed/${vidId}?list=${plId}&rel=0&origin=${encodeURIComponent(window.location.origin)}`
+          : `https://www.youtube.com/embed/videoseries?list=${plId}&rel=0&origin=${encodeURIComponent(window.location.origin)}`;
         return (
           <div className="aspect-video">
             <iframe
@@ -191,7 +190,6 @@ export default function PostCard({ post, onUpdate }) {
               className="w-full h-full"
               frameBorder="0"
               allowFullScreen
-              loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             />
