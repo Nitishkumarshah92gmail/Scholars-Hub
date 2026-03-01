@@ -11,6 +11,10 @@
                     "value": "accelerometer=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), autoplay=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), clipboard-write=(self), encrypted-media=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), gyroscope=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), picture-in-picture=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), web-share=(self)"
                 },
                 {
+                    "key": "Content-Security-Policy",
+                    "value": "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com;"
+                },
+                {
                     "key": "Referrer-Policy",
                     "value": "no-referrer-when-downgrade"
                 }
