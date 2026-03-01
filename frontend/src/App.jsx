@@ -2,29 +2,36 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import Layout from './components/Layout';
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import Feed from './pages/Feed';
-import Explore from './pages/Explore';
-import Upload from './pages/Upload';
-import Profile from './pages/Profile';
-import Notifications from './pages/Notifications';
-import PostDetail from './pages/PostDetail';
-import Bookmarks from './pages/Bookmarks';
-import PdfTools from './pages/PdfTools';
+import { lazy, Suspense } from 'react';
+
+// Lazy load all pages — only Layout is kept eager for shell rendering
+const Layout = lazy(() => import('./components/Layout'));
+const Landing = lazy(() => import('./pages/Landing'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Feed = lazy(() => import('./pages/Feed'));
+const Explore = lazy(() => import('./pages/Explore'));
+const Upload = lazy(() => import('./pages/Upload'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const PostDetail = lazy(() => import('./pages/PostDetail'));
+const Bookmarks = lazy(() => import('./pages/Bookmarks'));
+const PdfTools = lazy(() => import('./pages/PdfTools'));
+
+function PageSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-navy-950">
+      <div className="loading-spinner"></div>
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-navy-950">
-        <div className="loading-spinner"></div>
-      </div>
-    );
+    return <PageSpinner />;
   }
   return user ? children : <Navigate to="/landing" />;
 }
@@ -37,25 +44,27 @@ function PublicRoute({ children }) {
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
-      <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route index element={<Feed />} />
-        <Route path="explore" element={<Explore />} />
-        <Route path="upload" element={<Upload />} />
-        <Route path="profile/:id" element={<Profile />} />
-        <Route path="notifications" element={<Notifications />} />
-        <Route path="post/:id" element={<PostDetail />} />
-        <Route path="bookmarks" element={<Bookmarks />} />
-        <Route path="pdf-tools" element={<PdfTools />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+    <Suspense fallback={<PageSpinner />}>
+      <Routes>
+        <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+        <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route index element={<Feed />} />
+          <Route path="explore" element={<Explore />} />
+          <Route path="upload" element={<Upload />} />
+          <Route path="profile/:id" element={<Profile />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="post/:id" element={<PostDetail />} />
+          <Route path="bookmarks" element={<Bookmarks />} />
+          <Route path="pdf-tools" element={<PdfTools />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Suspense>
   );
 }
 

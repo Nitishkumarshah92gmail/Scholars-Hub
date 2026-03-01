@@ -1,10 +1,12 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { getNotifications, getTotalUsers } from '../api';
-import ChatBot from './ChatBot';
 import logoImg from '../assets/logo.png';
+
+// Lazy load ChatBot — it's heavy and only needed when opened
+const ChatBot = lazy(() => import('./ChatBot'));
 import {
   HiHome,
   HiOutlineHome,
@@ -44,15 +46,18 @@ export default function Layout() {
     getTotalUsers()
       .then((res) => setTotalUsers(res.data.totalUsers || 0))
       .catch(() => { });
-    const interval = setInterval(() => {
+    // Poll notifications every 60s (reduced from 30s) and total users every 5 min (rarely changes)
+    const notifInterval = setInterval(() => {
       getNotifications()
         .then((res) => setUnreadCount(res.data.unreadCount))
         .catch(() => { });
+    }, 60000);
+    const usersInterval = setInterval(() => {
       getTotalUsers()
         .then((res) => setTotalUsers(res.data.totalUsers || 0))
         .catch(() => { });
-    }, 30000);
-    return () => clearInterval(interval);
+    }, 300000);
+    return () => { clearInterval(notifInterval); clearInterval(usersInterval); };
   }, []);
 
   const handleLogout = async () => {
@@ -311,8 +316,10 @@ export default function Layout() {
         </div>
       </main>
 
-      {/* AI ChatBot */}
-      <ChatBot />
+      {/* AI ChatBot — lazy loaded */}
+      <Suspense fallback={null}>
+        <ChatBot />
+      </Suspense>
 
       {/* Mobile Bottom Nav — Instagram-style */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-ig-bg dark:bg-ig-bg-dark border-t border-ig-separator dark:border-ig-separator-dark z-30 flex justify-around py-2 px-1 safe-area-pb">

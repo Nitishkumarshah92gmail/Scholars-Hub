@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { likePost, commentPost, bookmarkPost, reportPost, deletePost } from '../api';
@@ -18,7 +18,7 @@ import {
   HiTrash,
 } from 'react-icons/hi';
 
-export default function PostCard({ post, onUpdate }) {
+export default memo(function PostCard({ post, onUpdate }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isOwner = user?._id === post.author?._id;
@@ -210,9 +210,11 @@ export default function PostCard({ post, onUpdate }) {
         <Link to={`/dashboard/profile/${post.author?._id}`} className="flex items-center gap-3 group">
           <div className="avatar-ring">
             <img
-              src={post.author?.avatar || `https://ui-avatars.com/api/?name=${post.author?.name}`}
+              src={post.author?.avatar || `https://ui-avatars.com/api/?name=${post.author?.name}&size=64`}
               alt={post.author?.name}
               className="w-8 h-8 rounded-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           </div>
           <div>
@@ -353,9 +355,11 @@ export default function PostCard({ post, onUpdate }) {
               <div key={comment._id || idx} className="flex gap-2">
                 <Link to={`/dashboard/profile/${comment.author?._id}`}>
                   <img
-                    src={comment.author?.avatar || `https://ui-avatars.com/api/?name=${comment.author?.name}`}
+                    src={comment.author?.avatar || `https://ui-avatars.com/api/?name=${comment.author?.name}&size=56`}
                     alt=""
                     className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </Link>
                 <div className="flex-1">
@@ -377,9 +381,11 @@ export default function PostCard({ post, onUpdate }) {
           {/* Comment Form */}
           <form onSubmit={handleComment} className="flex items-center gap-2 mt-3 pt-3 border-t border-ig-separator dark:border-ig-separator-dark">
             <img
-              src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}`}
+              src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&size=56`}
               alt=""
               className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+              loading="lazy"
+              decoding="async"
             />
             <input
               type="text"
@@ -400,4 +406,4 @@ export default function PostCard({ post, onUpdate }) {
       )}
     </div>
   );
-}
+})

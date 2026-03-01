@@ -3,9 +3,31 @@ import { supabase } from './lib/supabase';
 
 const API = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' });
 
+// Cache the session to avoid calling getSession() on every single API request
+let _cachedSession = null;
+let _sessionFetchedAt = 0;
+const SESSION_CACHE_MS = 30_000; // refresh cached session every 30s
+
+async function getCachedSession() {
+  const now = Date.now();
+  if (_cachedSession && now - _sessionFetchedAt < SESSION_CACHE_MS) {
+    return _cachedSession;
+  }
+  const { data: { session } } = await supabase.auth.getSession();
+  _cachedSession = session;
+  _sessionFetchedAt = now;
+  return session;
+}
+
+// Keep cache in sync when auth state changes
+supabase.auth.onAuthStateChange((_event, session) => {
+  _cachedSession = session;
+  _sessionFetchedAt = Date.now();
+});
+
 // Attach Supabase access token to every request
 API.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession();
+  const session = await getCachedSession();
   if (session?.access_token) {
     config.headers.Authorization = `Bearer ${session.access_token}`;
   }

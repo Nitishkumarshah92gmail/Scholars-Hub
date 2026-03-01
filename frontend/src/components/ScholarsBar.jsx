@@ -66,9 +66,11 @@ export default function ScholarsBar() {
                   <img
                     src={
                       scholar.avatar ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(scholar.name)}&background=1e3a5f&color=fbbf24&size=200`
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(scholar.name)}&background=1e3a5f&color=fbbf24&size=64`
                     }
                     alt={scholar.name}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full rounded-full object-cover border-[2.5px] border-ig-bg dark:border-ig-bg-dark"
                   />
                 </div>
